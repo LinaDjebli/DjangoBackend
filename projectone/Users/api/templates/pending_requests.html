@@ -1,0 +1,21 @@
+ 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pending Requests</title>
+</head>
+<body>
+    <h2>Pending Registration Requests</h2>
+    <ul>
+        {% for request in requests %}
+        <li>
+            {{ request.username }} - {{ request.email }} - {{ request.get_user_type_display }}
+            <form action="{% url 'approve_request' request.id %}" method="post">
+                {% csrf_token %}
+                <button type="submit">Approve</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

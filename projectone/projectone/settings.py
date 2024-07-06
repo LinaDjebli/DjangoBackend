@@ -185,8 +185,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
  
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '994256048021-uicpl5kgk9v8168rmvad5mthqn0p1fnn.apps.googleusercontent.com'
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'

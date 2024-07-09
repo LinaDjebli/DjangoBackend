@@ -22,7 +22,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-#SECRET_KEY = 'django-insecure-f03x)@^gireq3#w6a=0@t+8u_0%5)6^ejc=sr2nopphl2y0!*#'
+SECRET_KEY = 'django-insecure-f03x)@^gireq3#w6a=0@t+8u_0%5)6^ejc=sr2nopphl2y0!*#'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -33,11 +33,7 @@ ACCOUNT_UNIQUE_EMAIL =True
  
 
  
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-}
+ 
 
 #AUTHENTICATION_BACKENDS = [
   #  'django.contrib.auth.backends.ModelBackend',
@@ -71,6 +67,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'rest_auth.registration',
     'multiselectfield',
+    'rest_framework_simplejwt',
      
 ]
 AUTHENTICATION_BACKENDS = (
@@ -78,7 +75,27 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+from datetime import timedelta
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+}
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -136,7 +153,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'djangobd',  # Your database name
         'USER': 'root',      # Your database user
-        'PASSWORD': 'mysql222',  # Your database password
+        'PASSWORD': 'mysql22',  # Your database password
         'HOST': 'localhost', # Database host, usually 'localhost' for local development
         'PORT': '3306',      # Database port, 3306 is the default for MySQL
     }

@@ -11,7 +11,8 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django import forms 
 from multiselectfield import MultiSelectField
-
+from django.utils.translation import gettext_lazy as _
+from django.contrib.auth import get_user_model
 
  
 
@@ -76,10 +77,14 @@ class Agency(models.Model):
 
     def __str__(self):
         return  self.agency_name
-    
-from django.db import models
-from django.utils.translation import gettext_lazy as _
+  
+  
  
+class Language(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
 
 class Guide(models.Model):
     GENDER_CHOICES = [
@@ -87,15 +92,14 @@ class Guide(models.Model):
         ('F', 'Female'),
     ]
     
-     
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='guide')
-    guide_email = models.EmailField(unique=True,null = True)
+    guide_email = models.EmailField(unique=True, null=True)
     guide_phone_number = models.CharField(max_length=15, null=True)
     password = models.CharField(max_length=100, null=True)
     guide_first_name = models.CharField(max_length=30, null=True)
     guide_last_name = models.CharField(max_length=30, null=True)
     guide_gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
-    guide_languages = MultiSelectField(choices = LANGUAGE_CHOICES, max_choices = 5 , max_length=50 )
+    guide_languages = models.ManyToManyField(Language, related_name='guides')
     guide_dateofbirth = models.DateField(_("mm/dd/yyyy"), auto_now=False, auto_now_add=False)
     guide_description = models.CharField(max_length=200)
     guide_website = models.CharField(max_length=100, null=True)
@@ -104,9 +108,7 @@ class Guide(models.Model):
     guide_profile_picture = models.ImageField(upload_to='profile_pictures/', default='projectone/Users/defaults/default-avatar-icon-of-social-media-user-vector.jpg')
 
     def __str__(self):
-        return  f"{self.guide_first_name} {self.guide_last_name}"
-
-   
+        return f"{self.guide_first_name} {self.guide_last_name}"
 
 class Client(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='client', null = True)

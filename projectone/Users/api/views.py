@@ -1,5 +1,4 @@
 # Users/api/views.py
-
 import json
 from urllib import request
 from django.views import View
@@ -10,9 +9,21 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from Users.models import CustomUser , Agency
-from .serializers import ClientSignupSerializer, AgencySignupSerializer, GuideSignupSerializer, UserSerialier
+from .serializers import ClientSignupSerializer, AgencySignupSerializer, GuideProfilePictureUpdateSerializer, GuideSignupSerializer, UserSerialier
 from .permissions import IsClientUser, IsAgencyUser, IsGuideUser
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.http import JsonResponse
+from django.contrib.auth import login
+from django.views.decorators.csrf import csrf_exempt
+import json
+  
+
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -60,11 +71,7 @@ class GuideSignupView(APIView):
             return Response({"message": "Registration request submitted. Awaiting approval."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 # views.py
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
- 
+
 from .serializers import ProfilePictureUpdateSerializer
 
 class UpdateProfilePictureView(APIView):
@@ -84,19 +91,8 @@ class UpdateProfilePictureView(APIView):
             return Response({"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
  
-from django.contrib.auth import authenticate, login
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib import messages
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-
-import json
-from django.views import View
-from django.http import JsonResponse
-from django.contrib.auth import authenticate, login
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
-from Users.models import CustomUser
+ 
+ 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UserLoginView(View):
@@ -109,31 +105,34 @@ class UserLoginView(View):
 
         email = data.get('email')
         password = data.get('password')
-
+        
         # Check if email and password are provided
         if email and password:
             try:
                 # Get the user object from the database
                 user = CustomUser.objects.get(email=email)
                 
-                # Verify the provided password against the hashed password
+                if not user.is_active:
+                    return JsonResponse({'status': 'error', 'message': 'User not allowed yet'}, status=403)
+                
                 if user.check_password(password):
                     # User is authenticated, specify the backend and log the user in
                     user.backend = 'django.contrib.auth.backends.ModelBackend'
                     login(request, user)
-                    return JsonResponse({'status': 'success', 'message': 'Login successful'}, status=status.HTTP_200_OK)
+                   
+                    return JsonResponse({'status': 'success', 'message': 'Login successful', 'user_id': user.id}, status=201)
                 else:
                     # Password verification failed
-                    return JsonResponse({'status': 'error', 'message': 'Invalid  password'},status = status.HTTP_406_NOT_ACCEPTABLE)
+                    return JsonResponse({'status': 'error', 'message': 'Invalid password'}, status=406)
             except CustomUser.DoesNotExist:
                 # User with the provided email does not exist
-                return JsonResponse({'status': 'error', 'message': 'email not found'} ,status = status.HTTP_404_NOT_FOUND)
+                return JsonResponse({'status': 'error', 'message': 'Email not found'}, status=404)
         else:
             # Email or password not provided
-            return JsonResponse({'status': 'error', 'message': 'Please provide both email and password'},status = status.HTTP_405_METHOD_NOT_ALLOWED)
+            return JsonResponse({'status': 'error', 'message': 'Please provide both email and password'}, status=400)
 
         # Return a bad request response if the request method is not POST
-        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+        return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
 class LogoutView(APIView):
     def post(self, request, format=None):
@@ -171,3 +170,31 @@ class GuideOnlyView(generics.RetrieveAPIView):
       #      for chunk in file_obj.chunks():
        #         destination.write(chunk)
         #return Response({'message': 'File uploaded successfully'}, status=status.HTTP_200_OK)
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+ 
+
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework import status
+from Users.models import Guide
+from .serializers import GuideProfilePictureUpdateSerializer
+
+class GuideProfilePictureUpdateView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+
+    def patch(self, request, userid):
+        try:
+            guide = Guide.objects.get(user_id=userid)  # Assuming 'user_id' is the correct field name
+        except Guide.DoesNotExist:
+            return Response({"error": "Guide not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = GuideProfilePictureUpdateSerializer(guide, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Profile picture updated successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

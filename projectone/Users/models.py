@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.signals import post_save
@@ -60,8 +61,7 @@ class CustomUser(AbstractUser):
     is_client = models.BooleanField(default=False)
     is_agency = models.BooleanField(default=False)
     is_guide = models.BooleanField(default=False)
-    first_name = None  # Remove first_name field from CustomUser
-    last_name = None
+     
 
     def __str__(self):
         return self.username
@@ -91,8 +91,9 @@ class Agency(models.Model):
     password = models.CharField(max_length=100,null = True)
     agency_phone_number = models.CharField(max_length=15,null = True)  
     agency_website = models.CharField(max_length=255,null = True)
-    number_of_employees = models.CharField(max_length=15,null = True)
-    agency_location = models.CharField(max_length=15,null = True)
+  #  number_of_employees = models.CharField(max_length=15,null = True)
+    agency_location = models.CharField(max_length=255,null = True)
+    #verification_code = models.CharField(max_length=6,null = True )
     agency_licenses = models.FileField(upload_to='licenses/', null=True, blank=True,)
     agency_profile_picture = models.FileField(upload_to='profile_pictures/',default='projectone/Users/defaults/default-avatar-icon-of-social-media-user-vector.jpg')
 
@@ -100,6 +101,24 @@ class Agency(models.Model):
         return  self.agency_name
   
   
+# models.py
+
+from django.db import models
+
+class TemporaryAgencySignup(models.Model):
+    username = models.CharField(max_length=255)
+    agency_name = models.CharField(max_length=255)
+    agency_email = models.EmailField(unique=True)
+    password = models.CharField(max_length=100)
+    agency_phone_number = models.CharField(max_length=15)
+    agency_website = models.CharField(max_length=255)
+    number_of_employees = models.CharField(max_length=15)
+    agency_location = models.CharField(max_length=15)
+    agency_licenses = models.FileField(upload_to='licenses/', null=True, blank=True)
+    agency_profile_picture = models.FileField(upload_to='profile_pictures/', default='projectone/Users/defaults/default-avatar-icon-of-social-media-user-vector.jpg')
+    verification_code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
  
 class Language(models.Model):
     name = models.CharField(max_length=100)
@@ -136,8 +155,8 @@ class Client(models.Model):
     first_name = models.CharField(max_length=30,null = True)
     last_name = models.CharField(max_length=30,null = True)
     phone_number = PhoneNumberField(null = True, blank = True)
-    #email_user = models.EmailField(unique=True,null = True)
-    #password = models.CharField(max_length=100,null = True)
+    email_user = models.EmailField(unique=True,null = True)
+    password = models.CharField(max_length=100,null = True)
     profile_picture = models.ImageField(upload_to='profile_pictures/',default='projectone/Users/defaults/default-avatar-icon-of-social-media-user-vector.jpg')
 
     def __str__(self):
@@ -257,56 +276,29 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 
+from django.db import models
+from django.contrib.auth.models import User
+
 class ActivityCategory(models.Model):
     name = models.CharField(max_length=255)
-
-class Food(models.Model):
-    name = models.CharField(max_length=255)
-
-class Transport(models.Model):
-    name = models.CharField(max_length=255)
-
-class SuitableFor(models.Model):
-    description = models.TextField()
-    activity = models.ForeignKey('Activity', related_name='suitable_for', on_delete=models.CASCADE)
-
-class Allowed(models.Model):
-    description = models.TextField()
-    activity = models.ForeignKey('Activity', related_name='allowed', on_delete=models.CASCADE)
-
-class NotAllowed(models.Model):
-    description = models.TextField()
-    activity = models.ForeignKey('Activity', related_name='not_allowed', on_delete=models.CASCADE)
-
-class Includes(models.Model):
-    description = models.TextField()
-    activity = models.ForeignKey('Activity', related_name='includes', on_delete=models.CASCADE)
-
-class NotIncludes(models.Model):
-    description = models.TextField()
-    activity = models.ForeignKey('Activity', related_name='not_includes', on_delete=models.CASCADE)
-
-class Highlights(models.Model):
-    description = models.TextField()
-    activity = models.ForeignKey('Activity', related_name='highlights', on_delete=models.CASCADE)
 
 class Activity(models.Model):
     activity_id = models.AutoField(primary_key=True)
     activity_name = models.CharField(max_length=255)
     guide_name = models.CharField(max_length=255)
-    guide_phone = models.CharField(max_length=20)
     activity_category = models.ForeignKey(ActivityCategory, on_delete=models.CASCADE)
     activity_type = models.CharField(max_length=255)
     activity_description = models.TextField()
-    activity_location = models.URLField()
-    food = models.ManyToManyField(Food)
-    transport = models.ManyToManyField(Transport)
+    activity_location = models.TextField()
     emergency_phone_number = models.CharField(max_length=20)
-    cut_off_time = models.CharField(max_length=20)
-    meeting_point = models.URLField()
-    published_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='published_activities' , null = True , blank = True)
+    cut_off_time = models.CharField(max_length=255)
+    meeting_point = models.TextField()
+    groupesize = models.CharField(max_length=255)
+    dropoff = models.CharField(max_length=255)
+    region = models.CharField(max_length=255)  # New column for region
+    wilaya = models.CharField(max_length=255)  # New column for wilaya
+    published_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='published_activities', null=True, blank=True)
     class Meta:
-         
         constraints = [
             models.CheckConstraint(
                 check=~models.Q(activity_location=models.F('meeting_point')),
@@ -314,17 +306,13 @@ class Activity(models.Model):
             ),
         ]
         
-def __str__(self):
-        return  self.activity_id
-
-
+    def __str__(self):
+        return self.activity_name
 
 class DailyActivity(models.Model):
-    
-    activity = models.OneToOneField(Activity, on_delete=models.CASCADE,primary_key=True,related_name='daily_activity')
-    activity_date = models.DateField(null = True , blank = True)
-    start_hour = models.TimeField(null = True , blank = True)
-    end_hour = models.TimeField(null = True , blank = True)
+    activity = models.OneToOneField(Activity, on_delete=models.CASCADE, primary_key=True, related_name='daily_activity')
+    start_hour = models.TimeField(null=True, blank=True)
+    end_hour = models.TimeField(null=True, blank=True)
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -332,13 +320,13 @@ class DailyActivity(models.Model):
                 name='start_date_before_end_date'
             ),
         ]
-        
 
 class WeeklyActivity(models.Model):
-    activity = models.OneToOneField(Activity, on_delete=models.CASCADE,primary_key=True,related_name='weekly_activity')
+    
     day = models.CharField(max_length=255)
     start_hour = models.TimeField()
     end_hour = models.TimeField()
+    activity = models.ForeignKey(Activity, related_name='weekly_activity', on_delete=models.CASCADE , null =True ,blank = True, default="1")
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -346,52 +334,98 @@ class WeeklyActivity(models.Model):
                 name='start_date_before_end_date_weekly'
             ),
         ]
-        
+
 class SpecificDurationActivity(models.Model):
-    activity = models.OneToOneField(Activity, on_delete=models.CASCADE,primary_key=True,related_name='specific_duration_activity')
-    start_date = models.DateField()
-    activity_start_hour = models.TimeField()
+    activity = models.OneToOneField(Activity, on_delete=models.CASCADE, primary_key=True, related_name='specific_duration_activity')
+    activity_start_date = models.DateField()
+    start_hour = models.TimeField(
+
+    )
     activity_end_date = models.DateField()
     end_hour = models.TimeField()
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=models.Q(start_date__lt=models.F('activity_end_date')),
+                check=models.Q(activity_start_date__lt=models.F('activity_end_date')),
                 name='start_date_before_end_date_specific'
             ),
         ]
-        
 
 class OneDayActivity(models.Model):
-    activity = models.OneToOneField(Activity, on_delete=models.CASCADE, primary_key=True,related_name='one_day_activity')
-    activity_start_hour = models.TimeField()
-    activity_end_hour = models.TimeField()
+    activity = models.OneToOneField(Activity, on_delete=models.CASCADE, primary_key=True, related_name='one_day_activity')
+    activity_date = models.DateField(null = True , blank = True)
+    start_hour = models.TimeField()
+    end_hour = models.TimeField()
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=models.Q(activity_start_hour__lt=models.F('activity_end_hour')),
+                check=models.Q(start_hour__lt=models.F('end_hour')),
                 name='start_date_before_end_date_oneday'
             ),
         ]
         
     def __str__(self):
         return f"{self.activity.activity_name} - One Day Activity"
+
 class Price(models.Model):
-    PRICE_TYPE_CHOICES = [
-        ('ADULT', 'Adult'),
-        ('CHILD', 'Child'),
-        ('GROUP', 'Group'),
-        ('INDIVIDUAL', 'Individual'),
-    ]
-    price_type = models.CharField(max_length=50, choices=PRICE_TYPE_CHOICES)
+     
+    
+    price_type = models.CharField(max_length=50, )
     number_of_clients = models.IntegerField()
     price = models.FloatField()
-    activity = models.ForeignKey('Activity', related_name='prices', on_delete=models.CASCADE )
-
-
+    activity = models.ForeignKey(Activity, related_name='prices', on_delete=models.CASCADE)
 
 class Photos(models.Model):
+    File = models.ImageField(upload_to='activity_photos/')
+    activity = models.ForeignKey(Activity, related_name='photos', on_delete=models.CASCADE, null=True, blank=True)
 
-  image_path = models.ImageField(upload_to='Activities_Photos/',default='projectone/Users/defaults/default-avatar-icon-of-social-media-user-vector.jpg')
+class NotSuitableFor(models.Model):
+    description = models.TextField()
+    activity = models.ForeignKey(Activity, related_name='notsuitable_for', on_delete=models.CASCADE)
 
-  activity = models.ForeignKey('Activity', related_name='photos', on_delete=models.CASCADE , null = True , blank = True )
+class NotAllowed(models.Model):
+    description = models.TextField()
+    activity = models.ForeignKey(Activity, related_name='not_allowed', on_delete=models.CASCADE)
+
+class Includes(models.Model):
+    description = models.TextField()
+    activity = models.ForeignKey(Activity, related_name='includes', on_delete=models.CASCADE)
+
+class NotIncludes(models.Model):
+    description = models.TextField()
+    activity = models.ForeignKey(Activity, related_name='not_includes', on_delete=models.CASCADE)
+
+class Highlights(models.Model):
+    description = models.TextField()
+    activity = models.ForeignKey(Activity, related_name='highlights', on_delete=models.CASCADE)
+
+class Food(models.Model):
+    food = models.TextField()
+    activity = models.ForeignKey(Activity, related_name='food', on_delete=models.CASCADE)
+
+class Transport(models.Model):
+    transport = models.TextField()
+    activity = models.ForeignKey(Activity, related_name='transport', on_delete=models.CASCADE)
+
+class Booking(models.Model):
+    BOOKING_STATES = (
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    )
+
+    firstname = models.CharField(max_length=100)
+    lastname = models.CharField(max_length=100)
+    email = models.EmailField()
+    age = models.IntegerField()
+    wilaya = models.CharField(max_length=100)
+    phonenumber = models.CharField(max_length=15)
+    number_of_tickets = models.PositiveIntegerField()
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE)
+    booking_date = models.DateTimeField(auto_now_add=True)
+    state = models.CharField(max_length=10, choices=BOOKING_STATES, default='pending')
+
+    def calculate_total_price(self):
+        self.total_price = self.number_of_tickets * self.activity.prices  # Adjusted here
+        self.save()

@@ -1,7 +1,8 @@
+ 
 import re
 from django.forms import DateField
 from rest_framework import serializers 
-from Users.models import  Transport,Food,Price,SuitableFor, CustomUser, Client, Agency, Guide, OneDayActivity, Photos, SpecificDurationActivity, WeeklyActivity, validate_pdf  ,LANGUAGE_CHOICES , Language
+from Users.models import Booking, Transport,  Food, Highlights, Price,NotSuitableFor, CustomUser, Client, Agency, Guide, OneDayActivity, Photos, SpecificDurationActivity, WeeklyActivity, validate_pdf  ,LANGUAGE_CHOICES , Language
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -22,14 +23,14 @@ class AgencySignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(style={"input_type": "password"}, write_only=True)
     agency_phone_number = serializers.CharField(required=True)
     agency_website = serializers.CharField(required=True)
-    number_of_employees = serializers.CharField(required=True)
+   # number_of_employees = serializers.CharField(required=True)
     agency_location = serializers.CharField(required=True)
     agency_licenses = serializers.FileField(required=False)
     agency_profile_picture = serializers.FileField(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'agency_name', 'agency_email', 'password' , 'agency_phone_number', 'agency_website', 'number_of_employees', 'agency_location', 'agency_licenses', 'agency_profile_picture']
+        fields = ['username', 'agency_name', 'agency_email', 'password' , 'agency_phone_number', 'agency_website', 'agency_location', 'agency_licenses', 'agency_profile_picture']
 
     def save(self, **kwargs):
         email = self.validated_data['agency_email']
@@ -57,7 +58,7 @@ class AgencySignupSerializer(serializers.ModelSerializer):
             password=password,
             agency_phone_number=self.validated_data['agency_phone_number'],
             agency_website=self.validated_data['agency_website'],
-            number_of_employees=self.validated_data['number_of_employees'],
+            #number_of_employees=self.validated_data['number_of_employees'],
             agency_location=self.validated_data['agency_location'],
             agency_licenses=self.validated_data.get('agency_licenses'),
             agency_profile_picture=self.validated_data.get('agency_profile_picture', 'defaults/default_profile_picture.png')
@@ -74,6 +75,15 @@ class AgencySignupSerializer(serializers.ModelSerializer):
         )
 
         return user
+# serializers.py
+
+from rest_framework import serializers
+from Users.models import TemporaryAgencySignup
+
+class TempAgencySignupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TemporaryAgencySignup
+        fields = ['username', 'agency_name', 'agency_email', 'password', 'agency_phone_number', 'agency_website', 'number_of_employees', 'agency_location', 'agency_licenses', 'agency_profile_picture']
 
 from rest_framework import serializers
 from django.contrib.auth import authenticate
@@ -156,7 +166,7 @@ from rest_framework import serializers
 from Users.models import CustomUser, Client
 from django.core.mail import send_mail
 from django.conf import settings
-"""""
+
 class ClientSignupSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
@@ -210,9 +220,9 @@ class ClientSignupSerializer(serializers.ModelSerializer):
 
         return user
 # serializers.py
-"""
 
 
+""""
 class ClientSignupSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(style={"input_type": "password"}, write_only=True, required=True)
@@ -253,7 +263,7 @@ class ClientSignupSerializer(serializers.ModelSerializer):
 
         return user
 from rest_framework import serializers
- 
+ """
 
 class ProfilePictureUpdateSerializer(serializers.ModelSerializer):
     agency_profile_picture = serializers.ImageField(required=True)
@@ -313,150 +323,177 @@ class CategorySiteSerializer(serializers.ModelSerializer):
 
 
 from Users.models import (
-    Activity, DailyActivity, Price, Food, Transport, SuitableFor, Allowed, NotAllowed, 
-    Includes, NotIncludes, Highlights, ActivityCategory, CustomUser
+    Activity, DailyActivity, Price   ,NotSuitableFor  , NotAllowed, 
+    Includes, NotIncludes , ActivityCategory, CustomUser
 )
 
  
 from rest_framework import serializers
-from Users.models import DailyActivity, Activity, Price, Allowed, NotAllowed, Includes, NotIncludes, Highlights
+from Users.models import DailyActivity, Activity, Price  , NotAllowed, Includes, NotIncludes  #Highlights
 from Users.models import CustomUser
+
+from rest_framework import serializers
 
 class PriceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Price
         fields = ['price_type', 'number_of_clients', 'price']
 
+class FoodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Food
+        fields = ['food']
+
+class TransportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transport
+        fields = ['transport']
+
 class PhotoSerializer(serializers.ModelSerializer):
+    
     class Meta:
-        model =  Photos
-        fields = ['image_path']
+      
+        model = Photos
+        fields = ['File']
 
-class AllowedSerializer(serializers.ModelSerializer):
+class NotSuitableForSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Allowed
+        model = NotSuitableFor
         fields = ['description']
-
-class SuitableforSerializer(serializers.ModelSerializer):
-    class Meta:
-        model =  SuitableFor
-        fields = ['description']
-
 
 class NotAllowedSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotAllowed
         fields = ['description']
 
-
 class IncludesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Includes
         fields = ['description']
-
 
 class NotIncludesSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotIncludes
         fields = ['description']
 
-
 class HighlightsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Highlights
         fields = ['description']
 
-
 class ActivitySerializer(serializers.ModelSerializer):
     prices = PriceSerializer(many=True, required=False)
-    food = serializers.ListField(child=serializers.IntegerField(), write_only=True)
-    transport = serializers.ListField(child=serializers.IntegerField(), write_only=True)
-    suitable_for = SuitableforSerializer(many=True , required = False)
-    allowed = AllowedSerializer(many= True , required = False) 
-    not_allowed = NotAllowedSerializer(many=True,required = False)
-    includes = IncludesSerializer(many=True,required=False)
-    not_includes = NotIncludesSerializer(many=True, required = False)
-    highlights = HighlightsSerializer(many=True , required=False)
-    photos = PhotoSerializer(many=True , required= False)
+    notsuitable_for = NotSuitableForSerializer(many=True, required=False)
+    guide_name = serializers.CharField(required=False)
+    not_allowed = NotAllowedSerializer(many=True, required=False)
+    food = FoodSerializer(many=True , required=False) 
+    includes = IncludesSerializer(many=True, required=False)
+    transport = TransportSerializer(many=True,required=False)
+    not_includes = NotIncludesSerializer(many=True, required=False)
+    photos = PhotoSerializer(many=True, required=False)
     published_by = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    highlights = HighlightsSerializer(many=True , required = False)
+    
 
     class Meta:
         model = Activity
         fields = [
-            'activity_name', 'guide_name', 'guide_phone', 'activity_category',
-            'activity_type', 'activity_description', 'activity_location', 'food', 'transport',
-            'emergency_phone_number', 'cut_off_time', 'meeting_point',
-            'suitable_for', 'allowed', 'not_allowed', 'includes', 'not_includes', 'highlights',
-            'prices', 'published_by','photos'
+            'activity_id','activity_name', 'guide_name', 'activity_category', 'activity_type','food','transport' ,'activity_description',
+            'activity_location', 'emergency_phone_number', 'cut_off_time', 'meeting_point', 'groupesize', 
+            'dropoff', 'prices', 'notsuitable_for', 'not_allowed', 'includes', 'not_includes', 'highlights', 
+            'photos', 'published_by', 'region',
         ]
 
     def create(self, validated_data):
         prices_data = validated_data.pop('prices', [])
-        food_data = validated_data.pop('food', [])
-        transport_data = validated_data.pop('transport', [])
-        suitable_for_data = validated_data.pop('suitable_for', [])
-        allowed_data = validated_data.pop('allowed', [])
+        suitable_for_data = validated_data.pop('notsuitable_for', [])
         not_allowed_data = validated_data.pop('not_allowed', [])
         includes_data = validated_data.pop('includes', [])
         not_includes_data = validated_data.pop('not_includes', [])
+        food_data = validated_data.pop('food', [])
+        transport_data = validated_data.pop('transport', [])
         highlights_data = validated_data.pop('highlights', [])
-
+        photo_data = validated_data.pop('photos',[])
         activity = Activity.objects.create(**validated_data)
 
         for price_data in prices_data:
             Price.objects.create(activity=activity, **price_data)
+        for  item in photo_data:
+            Photos.objects.create(activity=activity, **item)
 
-        activity.food.set(food_data)
-        activity.transport.set(transport_data)
-         
-        for allowed_item in allowed_data:
-            Allowed.objects.create(activity=activity, **allowed_item)
+        for food_datas in food_data:
+            Food.objects.create(activity=activity, **food_datas) 
 
+        for transport_datas in transport_data:
+            Transport.objects.create(activity=activity, **transport_datas)
+        for highlight_item in highlights_data:
+           Highlights.objects.create(activity=activity, **highlight_item)
+
+        for suitable_fors_data in suitable_for_data:
+            NotSuitableFor.objects.create(activity=activity, **suitable_fors_data)
         for not_allowed_item in not_allowed_data:
             NotAllowed.objects.create(activity=activity, **not_allowed_item)
-
         for includes_item in includes_data:
             Includes.objects.create(activity=activity, **includes_item)
-
         for not_includes_item in not_includes_data:
             NotIncludes.objects.create(activity=activity, **not_includes_item)
-
-        for highlight_item in highlights_data:
-            Highlights.objects.create(activity=activity, **highlight_item)
-
+         
         return activity
 
     def update(self, instance, validated_data):
         instance.activity_name = validated_data.get('activity_name', instance.activity_name)
         instance.guide_name = validated_data.get('guide_name', instance.guide_name)
-        instance.guide_phone = validated_data.get('guide_phone', instance.guide_phone)
-        # Update other fields similarly
-
-        # Handle related fields updates
-         
-        # Update related fields as needed
-
+        instance.activity_category = validated_data.get('activity_category', instance.activity_category)
+        instance.activity_type = validated_data.get('activity_type', instance.activity_type)
+        instance.activity_description = validated_data.get('activity_description', instance.activity_description)
+        instance.activity_location = validated_data.get('activity_location', instance.activity_location)
+        instance.emergency_phone_number = validated_data.get('emergency_phone_number', instance.emergency_phone_number)
+        instance.cut_off_time = validated_data.get('cut_off_time', instance.cut_off_time)
+        instance.meeting_point = validated_data.get('meeting_point', instance.meeting_point)
+        instance.groupesize = validated_data.get('groupesize', instance.groupesize)
+        instance.dropoff = validated_data.get('dropoff', instance.dropoff)
+        instance.region = validated_data.get('region', instance.region)
+        instance.wilaya = validated_data.get('wilaya', instance.wilaya)
+        
         instance.save()
-        return instance
 
+        prices_data = validated_data.get('prices', [])
+        suitable_for_data = validated_data.get('notsuitable_for', [])
+        not_allowed_data = validated_data.get('not_allowed', [])
+        includes_data = validated_data.get('includes', [])
+        not_includes_data = validated_data.get('not_includes', [])
+        
+        photo_data = validated_data.get('photos', [])
+
+        for price_data in prices_data:
+            Price.objects.update_or_create(activity=instance, **price_data)
+        
+        for photo in photo_data:
+            Photos.objects.update_or_create(activity=instance, **photo)
+
+        for suitable_fors_data in suitable_for_data:
+            NotSuitableFor.objects.update_or_create(activity=instance, **suitable_fors_data)
+        for not_allowed_item in not_allowed_data:
+            NotAllowed.objects.update_or_create(activity=instance, **not_allowed_item)
+        for includes_item in includes_data:
+            Includes.objects.update_or_create(activity=instance, **includes_item)
+        for not_includes_item in not_includes_data:
+            NotIncludes.objects.update_or_create(activity=instance, **not_includes_item)
+        return instance
 
 class DailyActivitySerializer(serializers.ModelSerializer):
     activity = ActivitySerializer()
-    activity_date = serializers.DateField()
-    start_hour = serializers.TimeField()
-    end_hour = serializers.TimeField()
 
     class Meta:
         model = DailyActivity
-        fields = ['activity', 'activity_date', 'start_hour', 'end_hour']
+        fields = ['activity', 'start_hour', 'end_hour']
 
     def create(self, validated_data):
         activity_data = validated_data.pop('activity')
         prices_data = activity_data.pop('prices', [])
         food_data = activity_data.pop('food', [])
         transport_data = activity_data.pop('transport', [])
-        suitable_for_data = activity_data.pop('suitable_for', [])
-        allowed_data = activity_data.pop('allowed', [])
+        notsuitable_for_data = activity_data.pop('notsuitable_for', [])
         not_allowed_data = activity_data.pop('not_allowed', [])
         includes_data = activity_data.pop('includes', [])
         not_includes_data = activity_data.pop('not_includes', [])
@@ -466,32 +503,191 @@ class DailyActivitySerializer(serializers.ModelSerializer):
 
         for price_data in prices_data:
             Price.objects.create(activity=activity, **price_data)
-
-        activity.food.set(food_data)
-        activity.transport.set(transport_data)
-        for allowed_item in allowed_data:
-            Allowed.objects.create(activity=activity, **allowed_item)
-
+        for food_item in food_data:
+            Food.objects.create(activity=activity, **food_item)
+        for transport_item in transport_data:
+            Transport.objects.create(activity=activity, **transport_item)
         for not_allowed_item in not_allowed_data:
             NotAllowed.objects.create(activity=activity, **not_allowed_item)
-
         for includes_item in includes_data:
             Includes.objects.create(activity=activity, **includes_item)
-
         for not_includes_item in not_includes_data:
             NotIncludes.objects.create(activity=activity, **not_includes_item)
-
         for highlight_item in highlights_data:
             Highlights.objects.create(activity=activity, **highlight_item)
-       
-        return DailyActivity.objects.create(activity=activity, **validated_data)
-   
+        for suitable_item in notsuitable_for_data:
+            NotSuitableFor.objects.create(activity=activity, **suitable_item)
+
+        daily_activity = DailyActivity.objects.create(activity=activity, **validated_data)
+        return daily_activity
+
     def update(self, instance, validated_data):
-        instance.activity = validated_data.get('activity', instance.activity)
-        instance.activity_date = validated_data.get('activity_date', instance.activity_date)
-        instance.start_hour = validated_data.get('start_hour', instance.start_hour)
-        instance.end_hour = validated_data.get('end_hour', instance.end_hour)
-        # Update other fields similarly
- 
+        # Update fields similarly to the create method
         instance.save()
         return instance
+
+
+class OneDayActicitySerializer(serializers.ModelSerializer):
+    activity = ActivitySerializer()
+
+    class Meta:
+        model = OneDayActivity
+        fields = ['activity', 'activity_date', 'start_hour', 'end_hour']
+
+    def create(self, validated_data):
+        activity_data = validated_data.pop('activity')
+        prices_data = activity_data.pop('prices', [])
+        food_data = activity_data.pop('food', [])
+        transport_data = activity_data.pop('transport', [])
+        notsuitable_for_data = activity_data.pop('notsuitable_for', [])
+        not_allowed_data = activity_data.pop('not_allowed', [])
+        includes_data = activity_data.pop('includes', [])
+        not_includes_data = activity_data.pop('not_includes', [])
+        highlights_data = activity_data.pop('highlights', [])
+
+        activity = Activity.objects.create(**activity_data)
+
+        for price_data in prices_data:
+            Price.objects.create(activity=activity, **price_data)
+        for food_item in food_data:
+            Food.objects.create(activity=activity, **food_item)
+        for transport_item in transport_data:
+            Transport.objects.create(activity=activity, **transport_item)
+        for not_allowed_item in not_allowed_data:
+            NotAllowed.objects.create(activity=activity, **not_allowed_item)
+        for includes_item in includes_data:
+            Includes.objects.create(activity=activity, **includes_item)
+        for not_includes_item in not_includes_data:
+            NotIncludes.objects.create(activity=activity, **not_includes_item)
+        for highlight_item in highlights_data:
+            Highlights.objects.create(activity=activity, **highlight_item)
+        for suitable_item in notsuitable_for_data:
+            NotSuitableFor.objects.create(activity=activity, **suitable_item)
+
+        one_day_activity = OneDayActivity.objects.create(activity=activity, **validated_data)
+        return one_day_activity
+
+    def update(self, instance, validated_data):
+        # Update fields similarly to the create method
+        instance.save()
+        return instance
+
+
+class SpeceficDurationActicitySerializer(serializers.ModelSerializer):
+    activity = ActivitySerializer()
+
+    class Meta:
+        model = SpecificDurationActivity
+        fields = ['activity', 'activity_start_date', 'activity_end_date', 'start_hour', 'end_hour']
+
+    def create(self, validated_data):
+        activity_data = validated_data.pop('activity')
+        prices_data = activity_data.pop('prices', [])
+        food_data = activity_data.pop('food', [])
+        transport_data = activity_data.pop('transport', [])
+        notsuitable_for_data = activity_data.pop('notsuitable_for', [])
+        not_allowed_data = activity_data.pop('not_allowed', [])
+        includes_data = activity_data.pop('includes', [])
+        not_includes_data = activity_data.pop('not_includes', [])
+        highlights_data = activity_data.pop('highlights', [])
+
+        activity = Activity.objects.create(**activity_data)
+
+        for price_data in prices_data:
+            Price.objects.create(activity=activity, **price_data)
+        for food_item in food_data:
+            Food.objects.create(activity=activity, **food_item)
+        for transport_item in transport_data:
+            Transport.objects.create(activity=activity, **transport_item)
+        for not_allowed_item in not_allowed_data:
+            NotAllowed.objects.create(activity=activity, **not_allowed_item)
+        for includes_item in includes_data:
+            Includes.objects.create(activity=activity, **includes_item)
+        for not_includes_item in not_includes_data:
+            NotIncludes.objects.create(activity=activity, **not_includes_item)
+        for highlight_item in highlights_data:
+            Highlights.objects.create(activity=activity, **highlight_item)
+        for suitable_item in notsuitable_for_data:
+            NotSuitableFor.objects.create(activity=activity, **suitable_item)
+
+        specific_duration_activity = SpecificDurationActivity.objects.create(activity=activity, **validated_data)
+        return specific_duration_activity
+
+    def update(self, instance, validated_data):
+        # Update fields similarly to the create method
+        instance.save()
+        return instance
+
+
+
+
+class WeeklyActivitySerializer(serializers.ModelSerializer):
+    activity = ActivitySerializer()
+    day = serializers.ListField(child=serializers.CharField())
+    start_hour = serializers.TimeField()
+    end_hour = serializers.TimeField()
+
+    class Meta:
+        model = WeeklyActivity
+        fields = ['activity', 'day', 'start_hour', 'end_hour']
+
+    def create(self, validated_data):
+        activity_data = validated_data.pop('activity')
+        prices_data = activity_data.pop('prices', [])
+        food_data = activity_data.pop('food', [])
+        transport_data = activity_data.pop('transport', [])
+        notsuitable_for_data = activity_data.pop('notsuitable_for', [])
+        not_allowed_data = activity_data.pop('not_allowed', [])
+        includes_data = activity_data.pop('includes', [])
+        not_includes_data = activity_data.pop('not_includes', [])
+        highlights_data = activity_data.pop('highlights', [])
+
+        activity = Activity.objects.create(**activity_data)
+
+        for price_data in prices_data:
+            Price.objects.create(activity=activity, **price_data)
+        for food_item in food_data:
+            Food.objects.create(activity=activity, **food_item)
+        for transport_item in transport_data:
+            Transport.objects.create(activity=activity, **transport_item)
+        for not_allowed_item in not_allowed_data:
+            NotAllowed.objects.create(activity=activity, **not_allowed_item)
+        for includes_item in includes_data:
+            Includes.objects.create(activity=activity, **includes_item)
+        for not_includes_item in not_includes_data:
+            NotIncludes.objects.create(activity=activity, **not_includes_item)
+        for highlight_item in highlights_data:
+            Highlights.objects.create(activity=activity, **highlight_item)
+        for suitable_item in notsuitable_for_data:
+            NotSuitableFor.objects.create(activity=activity, **suitable_item)
+
+        weekly_activity = WeeklyActivity.objects.create(activity=activity, **validated_data)
+        return weekly_activity
+
+    def update(self, instance, validated_data):
+        # Update fields similarly to the create method
+        instance.save()
+        return instance    
+    
+class BookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = [
+            'firstname', 
+            'lastname', 
+            'email', 
+            'age', 
+            'wilaya', 
+            'phonenumber', 
+            'number_of_tickets', 
+            'total_price', 
+            'activity', 
+            'booking_date', 
+            'state'
+        ]
+        read_only_fields = ['booking_date', 'state']
+    def update(self, instance, validated_data):
+        # Update fields similarly to the create method
+        instance.save()
+        return instance    
+    

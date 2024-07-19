@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     #'allauth.socialaccount',
     #'allauth.socialaccount.providers.google',
     'Users',
+    "phone_verify",
     'rest_framework',
     'phonenumber_field',
     'rest_framework.authtoken',
